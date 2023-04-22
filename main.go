@@ -46,6 +46,7 @@ func handler() http.HandlerFunc {
 		// GET /<bridgeId>
 		// only retrieves data from the other client. it does not send data.
 		case http.MethodGet:
+			bridger.Join(to, from, w, r) // TODO
 
 		default:
 			http.Error(w, "", http.StatusNotFound)
