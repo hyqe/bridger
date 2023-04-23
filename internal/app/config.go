@@ -13,10 +13,7 @@ const (
 	envPORT = "PORT"
 )
 
-func Run() {
-	http.ListenAndServe(Addr(), Service())
-}
-
+// Addr gets address to bind the server to.
 func Addr() string {
 	port, ok := os.LookupEnv(envPORT)
 	if !ok {
@@ -25,6 +22,7 @@ func Addr() string {
 	return fmt.Sprintf(":%v", port)
 }
 
+// Service builds the entire service.
 func Service() http.Handler {
 	r := mux.NewRouter()
 
