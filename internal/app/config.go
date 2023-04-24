@@ -28,6 +28,7 @@ func Service() http.Handler {
 
 	Routes(
 		r,
+		bridging.NewCreateHandler(),
 		bridging.NewJoinHandler(getBridgeId),
 	)
 

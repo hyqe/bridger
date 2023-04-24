@@ -8,9 +8,11 @@ import (
 
 func Routes(
 	r *mux.Router,
-	JoinBridge http.HandlerFunc,
+	createBridge http.HandlerFunc,
+	joinBridge http.HandlerFunc,
 ) {
-	r.HandleFunc("/bridges/{bridgeId}", JoinBridge).Methods(http.MethodGet, http.MethodPut)
+	r.HandleFunc("/bridges", createBridge).Methods(http.MethodPost)
+	r.HandleFunc("/bridges/{bridgeId}", joinBridge).Methods(http.MethodGet, http.MethodPut)
 }
 
 func getBridgeId(r *http.Request) string {
