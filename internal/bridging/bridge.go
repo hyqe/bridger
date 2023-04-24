@@ -2,8 +2,6 @@ package bridging
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -34,28 +32,52 @@ type Bridger struct {
 
 func NewBridger() Bridger {
 	return Bridger{
-		
+		bridges: make(map[string]*Bridge),
 	}
 }
 
-func (b *Bridger) Join(claim Claim, w http.ResponseWriter) Bridge {
-	return Bridge{
-		
+func (b *Bridger) Get(id string) *Bridge {
+	b.Lock()
+	defer b.Unlock()
+	if bridge, ok := b.bridges[id]; ok {
+		return bridge
 	}
+
+	b.bridges[id] = bridge
+	return bridge
 }
 
 type Bridge struct {
-	clean func()
-	sync.Mutex
 	sync.WaitGroup
-	send http.ResponseWriter
+	ctx context.Context
+	l   *Conn
+	r   *Conn
+}
+
+func NewBridge() *Bridge {
+	return &Bridge{}
+
+}
+
+func (b *Bridge) Join(w http.ResponseWriter) *Conn {
+
+	return conn
+}
+func (b *Bridge) Wait() {
+	defer b.clean()
+	b.WaitGroup.Wait()
+}
+
+type Conn struct {
+	sync.Mutex
+	send    chan http.ResponseWriter
 	receive chan http.ResponseWriter
 }
 
-func (b *Bridge) Receive() chan  {
-
+func (b *Conn) Receive() chan http.ResponseWriter {
+	return nil
 }
 
-func (b *Bridge) Wait() {
-	defer clean()
+func (b *Conn) Close() {
+
 }

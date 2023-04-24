@@ -12,13 +12,6 @@ import (
 	"github.com/hyqe/bridger/internal/mint"
 )
 
-/*
-curl -X POST "http://localhost:8080/bridges" \
-	-d '{"users":["a","b"]}' \
-	-i
-
-*/
-
 type CreateRequest struct {
 	With string
 }

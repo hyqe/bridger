@@ -25,14 +25,17 @@ func NewJoinHandler(
 			return
 		}
 
-		bridge := bridger.Join(claim, w)
+		bridge := bridger.Get(claim.BridgeId)
+		defer bridge.Wait()
+
+		conn := bridge.Join(w)
+		defer conn.Close()
 
 		select {
-		case remote := <-bridge.Receive():
-			io.Copy(remote.w, r.Body)
-			remote.Close()
+		case remote := <-conn.Receive():
+			io.Copy(remote, r.Body)
+
 		}
 
-		bridge.Wait()
 	})
 }
