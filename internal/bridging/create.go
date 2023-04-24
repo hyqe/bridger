@@ -3,7 +3,7 @@ package bridging
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -13,7 +13,7 @@ import (
 )
 
 type CreateRequest struct {
-	With string
+	Users []string
 }
 
 type CreateResponse struct {
@@ -27,35 +27,55 @@ func NewCreateHandler(
 	getUserId func(r *http.Request) string,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId := getUserId(r)
+		// userId := getUserId(r)
 
 		var form CreateRequest
 
-		if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		//if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
+		//	http.Error(w, err.Error(), http.StatusBadRequest)
+		//	return
+		//}
+
+		form.Users = r.URL.Query()["u"]
+
+		if IsEmpty(form.Users...) {
+			http.Error(w, "invalid form", http.StatusBadRequest)
 			return
 		}
 
 		claim := Claim{
-			BridgeId:  hashedBridgeId(userId, form.With),
-			UserId:    userId,
+			BridgeId:  hashedBridgeId(form.Users...),
 			ExpiresAt: time.Now().UTC().Add(time.Hour),
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(CreateResponse{
-			BridgeId:  claim.BridgeId,
-			ExpiresAt: claim.ExpiresAt,
-			Token: mint.NewToken(
-				getSecret(),
-				claim,
-			).String(),
-		})
+		fmt.Fprint(w, mint.NewToken(
+			getSecret(),
+			claim,
+		).String())
+
+		// w.Header().Set("Content-Type", "application/json")
+		// json.NewEncoder(w).Encode(CreateResponse{
+		// 	BridgeId:  claim.BridgeId,
+		// 	ExpiresAt: claim.ExpiresAt,
+		// 	Token: mint.NewToken(
+		// 		getSecret(),
+		// 		claim,
+		// 	).String(),
+		// })
 	}
 }
 
 func hashedBridgeId(users ...string) string {
 	sort.Strings(users)
-	return hex.Dump(md5.New().Sum([]byte(strings.Join(users, ""))))
+	return hex.EncodeToString(md5.New().Sum([]byte(strings.Join(users, ""))))
+}
+
+func IsEmpty(vs ...string) bool {
+	for _, v := range vs {
+		if strings.TrimSpace(v) == "" {
+			return true
+		}
+	}
+	return false
 }

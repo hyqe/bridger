@@ -21,11 +21,13 @@ func (fn MinterFunc) Mint(v any) Token {
 func NewMinter(secret []byte) Minter {
 	return MinterFunc(func(v any) Token {
 		b, _ := json.Marshal(v)
-		return Token{
-			header:    hash(secret),
-			payload:   b,
-			signature: sign(secret, b),
+		t := Token{
+			header:  hash(secret),
+			payload: b,
+			//signature: sign(secret, b),
 		}
+		t.signature = sign(secret, t.contract())
+		return t
 	})
 }
 

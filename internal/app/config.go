@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/hyqe/bridger/internal/bridging"
@@ -29,21 +30,37 @@ func Service() http.Handler {
 
 	Routes(
 		r,
-		bridging.NewCreateHandler(secret, getUserId),
-		bridging.NewJoinHandler(getBridgeId, getBridgeClaim),
+		bridging.NewCreateHandler(getSecret, getUserId),
+		bridging.NewJoinHandler(getSecret, getBridgeId, getClaim[bridging.Claim]),
 	)
 
 	return r
 }
 
-func secret() []byte {
-	return mint.NewSecret(32)
+var secret = mint.NewSecret(32)
+
+func getSecret() []byte {
+	SECRET, ok := os.LookupEnv("SECRET")
+	if ok {
+		return []byte(SECRET)
+	}
+	return secret
 }
 
-func getBridgeClaim(r *http.Request) bridging.Claim {
-	return bridging.Claim{}
+func getClaim[T any](r *http.Request) (T, error) {
+	var claim T
+	rawtoken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	token, err := mint.ParseToken(rawtoken)
+	if err != nil {
+		return claim, err
+	}
+	if !token.IsValid(getSecret()) {
+		return claim, fmt.Errorf("invalid token")
+	}
+	token.Into(&claim)
+	return claim, err
 }
 
 func getUserId(r *http.Request) string {
-	return ""
+	return r.URL.Query().Get("from")
 }

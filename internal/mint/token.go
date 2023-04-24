@@ -2,6 +2,7 @@ package mint
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"strings"
 )
@@ -23,7 +24,15 @@ func (t Token) String() string {
 }
 
 func (t Token) IsValid(key []byte) bool {
-	return validate(key, append(t.header, t.payload...), t.signature)
+	return validate(key, t.contract(), t.signature)
+}
+
+func (t Token) contract() []byte {
+	return append(t.header, t.payload...)
+}
+
+func (t Token) Into(p any) error {
+	return json.Unmarshal(t.payload, p)
 }
 
 var (
@@ -39,11 +48,11 @@ func ParseToken(v string) (Token, error) {
 	if err != nil {
 		return Token{}, errors.Join(errInvalidToken, err)
 	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[0])
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return Token{}, errors.Join(errInvalidToken, err)
 	}
-	signature, err := base64.RawURLEncoding.DecodeString(parts[1])
+	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
 		return Token{}, errors.Join(errInvalidToken, err)
 	}
