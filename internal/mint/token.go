@@ -12,6 +12,10 @@ type Token struct {
 	signature []byte
 }
 
+func NewToken(secret []byte, payload any) Token {
+	return NewMinter(secret).Mint(payload)
+}
+
 func (t Token) String() string {
 	return base64.RawURLEncoding.EncodeToString(t.header) + "." +
 		base64.RawURLEncoding.EncodeToString(t.payload) + "." +
@@ -26,7 +30,7 @@ var (
 	errInvalidToken = errors.New("invalid token format")
 )
 
-func Parse(v string) (Token, error) {
+func ParseToken(v string) (Token, error) {
 	parts := strings.Split(v, ".")
 	if len(parts) != 3 {
 		return Token{}, errInvalidToken

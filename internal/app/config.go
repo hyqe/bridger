@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/hyqe/bridger/internal/bridging"
+	"github.com/hyqe/bridger/internal/mint"
 )
 
 const (
@@ -28,9 +29,21 @@ func Service() http.Handler {
 
 	Routes(
 		r,
-		bridging.NewCreateHandler(),
-		bridging.NewJoinHandler(getBridgeId),
+		bridging.NewCreateHandler(secret, getUserId),
+		bridging.NewJoinHandler(getBridgeId, getBridgeClaim),
 	)
 
 	return r
+}
+
+func secret() []byte {
+	return mint.NewSecret(32)
+}
+
+func getBridgeClaim(r *http.Request) bridging.Claim {
+	return bridging.Claim{}
+}
+
+func getUserId(r *http.Request) string {
+	return ""
 }
