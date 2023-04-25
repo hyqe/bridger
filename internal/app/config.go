@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hyqe/bridger/internal/bridging"
 	"github.com/hyqe/bridger/internal/mint"
+	"github.com/hyqe/timber"
 )
 
 const (
@@ -28,13 +29,17 @@ func Addr() string {
 func Service() http.Handler {
 	r := mux.NewRouter()
 
+	jack := timber.NewJack()
+
 	Routes(
 		r,
 		bridging.NewCreateHandler(getSecret, getUserId),
 		bridging.NewJoinHandler(getSecret, getBridgeId, getClaim[bridging.Claim]),
 	)
 
-	return r
+	logger := timber.NewMiddleware(jack)
+
+	return logger(r)
 }
 
 var secret = mint.NewSecret(32)

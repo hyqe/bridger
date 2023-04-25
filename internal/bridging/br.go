@@ -9,8 +9,7 @@ import (
 )
 
 type Claim struct {
-	BridgeId string `json:"i"`
-	// UserId    string    `json:"u"`
+	BridgeId  string    `json:"i"`
 	ExpiresAt time.Time `json:"e"`
 }
 
