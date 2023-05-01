@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -16,17 +17,8 @@ const (
 	envPORT = "PORT"
 )
 
-// Addr gets address to bind the server to.
-func Addr() string {
-	port, ok := os.LookupEnv(envPORT)
-	if !ok {
-		return ":8080"
-	}
-	return fmt.Sprintf(":%v", port)
-}
-
 // Service builds the entire service.
-func Service() http.Handler {
+func Service() (address string, handler http.Handler) {
 	r := mux.NewRouter()
 
 	jack := timber.NewJack()
@@ -39,7 +31,16 @@ func Service() http.Handler {
 
 	logger := timber.NewMiddleware(jack)
 
-	return logger(r)
+	return addr(), logger(spam(r))
+}
+
+// addr gets address to bind the server to.
+func addr() string {
+	port, ok := os.LookupEnv(envPORT)
+	if !ok {
+		return ":8080"
+	}
+	return fmt.Sprintf(":%v", port)
 }
 
 var secret = mint.NewSecret(32)
@@ -68,4 +69,15 @@ func getClaim[T any](r *http.Request) (T, error) {
 
 func getUserId(r *http.Request) string {
 	return r.URL.Query().Get("from")
+}
+
+func spam(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch path.Base(r.URL.Path) {
+		case ".env", ".remote", ".local", ".production":
+			http.Error(w, "💩", http.StatusTeapot)
+		default:
+			next.ServeHTTP(w, r)
+		}
+	}
 }

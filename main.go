@@ -4,6 +4,4 @@ import (
 	"github.com/hyqe/bridger/internal/app"
 )
 
-func main() {
-	app.Run()
-}
+func main() { app.Run() }
