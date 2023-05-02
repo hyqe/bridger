@@ -23,3 +23,11 @@ func Test_spam_next(t *testing.T) {
 	spam(next).ServeHTTP(w, r)
 	assert.Want(t, http.StatusOK, w.Code)
 }
+
+func Test_getConnectingIP(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/foo/", nil)
+	r.Header.Set("DO-Connecting-IP", "11.0.0.1")
+	ip, ok := getConnectingIP(r)
+	assert.Want(t, true, ok)
+	assert.Want(t, "11.0.0.1", ip)
+}

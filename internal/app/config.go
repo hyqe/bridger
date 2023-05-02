@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hyqe/bridger/internal/bridging"
@@ -72,6 +75,48 @@ func getUserId(r *http.Request) string {
 }
 
 func spam(next http.Handler) http.HandlerFunc {
+	var mu sync.Mutex
+	IPs := make(map[string]time.Time)
+
+	clean := func(ip string) {
+		mu.Lock()
+		defer mu.Unlock()
+		delete(IPs, ip)
+	}
+
+	add := func(ip string) {
+		mu.Lock()
+		defer mu.Unlock()
+		IPs[ip] = time.Now()
+	}
+
+	hasAny := func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(IPs) > 0
+	}
+
+	has := func(ip string) bool {
+		mu.Lock()
+		defer mu.Unlock()
+		_, ok := IPs[ip]
+		return ok
+	}
+
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			if !hasAny() {
+				continue
+			}
+			for k, v := range IPs {
+				if time.Now().After(v.Add(time.Minute)) {
+					clean(k)
+				}
+			}
+		}
+	}()
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch path.Base(r.URL.Path) {
 		case
@@ -82,11 +127,35 @@ func spam(next http.Handler) http.HandlerFunc {
 			"wp-login.php",
 			"index.php",
 			"administrator":
-			w.Header().Set("content-type", "💩")
-			w.Header().Set("you-are", "💩")
-			http.Error(w, "💩", http.StatusTeapot)
+			if ip, ok := getConnectingIP(r); ok {
+				add(ip)
+				w.Header().Set("X-Warning", "Your actions are being reported 👀")
+			}
+			w.Header().Set("Content-Type", "💩")
+			w.WriteHeader(http.StatusTeapot)
+			fmt.Fprint(w, "💩")
 		default:
+			if ip, ok := getConnectingIP(r); ok && has(ip) {
+				http.Error(w, "", http.StatusTeapot)
+				return
+			}
 			next.ServeHTTP(w, r)
 		}
 	}
+}
+
+var reHeaderConnectingIP = regexp.MustCompile(`^.*(?i:connect.*[-]ip)$`)
+
+func getConnectingIP(r *http.Request) (ip string, ok bool) {
+	for k, v := range r.Header {
+		if reHeaderConnectingIP.MatchString(k) {
+			if len(v) > 0 {
+				return v[0], true
+			}
+		}
+	}
+	if strings.TrimSpace(r.RemoteAddr) != "" {
+		return r.RemoteAddr, true
+	}
+	return "", false
 }
