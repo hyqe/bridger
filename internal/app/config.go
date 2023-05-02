@@ -82,6 +82,8 @@ func spam(next http.Handler) http.HandlerFunc {
 			"wp-login.php",
 			"index.php",
 			"administrator":
+			w.Header().Set("content-type", "💩")
+			w.Header().Set("you-are", "💩")
 			http.Error(w, "💩", http.StatusTeapot)
 		default:
 			next.ServeHTTP(w, r)
