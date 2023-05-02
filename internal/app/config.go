@@ -74,7 +74,14 @@ func getUserId(r *http.Request) string {
 func spam(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch path.Base(r.URL.Path) {
-		case ".env", ".remote", ".local", ".production":
+		case
+			".env",
+			".remote",
+			".local",
+			".production",
+			"wp-login.php",
+			"index.php",
+			"administrator":
 			http.Error(w, "💩", http.StatusTeapot)
 		default:
 			next.ServeHTTP(w, r)
